@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 from game import Game
-from model import Residual_CNN
+from model import ResCNN
 
 from agent import Agent, User
 
@@ -21,13 +21,13 @@ def playMatchesBetweenVersions(env,
     if player1version == -1:
         player1 = User('player1', env.state_size, env.action_size)
     else:
-        player1_NN = Residual_CNN(config.REG_CONST, config.LEARNING_RATE,
-                                  env.input_shape, env.action_size,
-                                  config.HIDDEN_CNN_LAYERS)
+        player1_NN = ResCNN(config.REG_CONST, config.LEARNING_RATE,
+                            env.input_shape, env.action_size,
+                            config.HIDDEN_CNN_LAYERS)
 
         if player1version > 0:
-            player1_network = player1_NN.read(env.name, run_version,
-                                              player1version)
+            player1_network = player1_NN._get_model(env.name, run_version,
+                                                    player1version)
             player1_NN.model.set_weights(player1_network.get_weights())
         player1 = Agent('player1', env.state_size, env.action_size,
                         config.MCTS_SIMS, config.CPUCT, player1_NN)
@@ -35,13 +35,13 @@ def playMatchesBetweenVersions(env,
     if player2version == -1:
         player2 = User('player2', env.state_size, env.action_size)
     else:
-        player2_NN = Residual_CNN(config.REG_CONST, config.LEARNING_RATE,
-                                  env.input_shape, env.action_size,
-                                  config.HIDDEN_CNN_LAYERS)
+        player2_NN = ResCNN(config.REG_CONST, config.LEARNING_RATE,
+                            env.input_shape, env.action_size,
+                            config.HIDDEN_CNN_LAYERS)
 
         if player2version > 0:
-            player2_network = player2_NN.read(env.name, run_version,
-                                              player2version)
+            player2_network = player2_NN._get_model(env.name, run_version,
+                                                    player2version)
             player2_NN.model.set_weights(player2_network.get_weights())
         player2 = Agent('player2', env.state_size, env.action_size,
                         config.MCTS_SIMS, config.CPUCT, player2_NN)
@@ -65,13 +65,14 @@ def playMatches(player1,
     sp_scores = {'sp': 0, "drawn": 0, 'nsp': 0}
     points = {player1.name: [], player2.name: []}
 
+    print('    Episode:', end=' ')
     for e in range(EPISODES):
 
         logger.info('====================')
         logger.info('EPISODE %d OF %d', e + 1, EPISODES)
         logger.info('====================')
 
-        print(str(e + 1) + ' '),
+        print(str(e + 1), end=' ')
 
         state = env.reset()
 
@@ -144,9 +145,7 @@ def playMatches(player1,
             logger.info('====================')
 
             # Do the action
-            state, value, done, _ = env.step(
-                action
-            )
+            state, value, done, _ = env.step(action)
             # the value of the newState from the POV of the new playerTurn
             # i.e. -1 if the previous player played a winning move
 
@@ -191,5 +190,6 @@ def playMatches(player1,
                 pts = state.score
                 points[players[state.playerTurn]['name']].append(pts[0])
                 points[players[-state.playerTurn]['name']].append(pts[1])
+    print('Done!')
 
     return (scores, memory, points, sp_scores)

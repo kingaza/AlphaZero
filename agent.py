@@ -22,6 +22,7 @@ class User():
 
     def act(self, state, tau):
         action = input('Enter your chosen action: ')
+        action = int(action)
         pi = np.zeros(self.action_size)
         pi[action] = 1
         value = None
@@ -71,9 +72,9 @@ class Agent():
     def act(self, state, tau):
 
         if self.mcts is None or state.id not in self.mcts.tree:
-            self.buildMCTS(state)
+            self.build_MCTS(state)
         else:
-            self.changeRootMCTS(state)
+            self.change_root_MCTS(state)
 
         # run the simulation
         for sim in range(self.MCTSsimulations):
@@ -83,12 +84,12 @@ class Agent():
             self.simulate()
 
         # get action values
-        pi, values = self.getAV(1)
+        pi, values = self.get_action_value(1)
 
         # pick the action
-        action, value = self.chooseAction(pi, values, tau)
+        action, value = self.choose_action(pi, values, tau)
 
-        nextState, _, _ = state.takeAction(action)
+        nextState, _, _ = state.take_action(action)
 
         NN_value = -self.get_preds(nextState)[0]
 
@@ -135,7 +136,7 @@ class Agent():
             probs = probs[allowedActions]
 
             for idx, action in enumerate(allowedActions):
-                newState, _, _ = leaf.state.takeAction(action)
+                newState, _, _ = leaf.state.take_action(action)
                 if newState.id not in self.mcts.tree:
                     node = mc.Node(newState)
                     self.mcts.addNode(node)
@@ -154,7 +155,7 @@ class Agent():
 
         return ((value, breadcrumbs))
 
-    def getAV(self, tau):
+    def get_action_value(self, tau):
         edges = self.mcts.root.edges
         pi = np.zeros(self.action_size, dtype=np.integer)
         values = np.zeros(self.action_size, dtype=np.float32)
@@ -166,7 +167,7 @@ class Agent():
         pi = pi / (np.sum(pi) * 1.0)
         return pi, values
 
-    def chooseAction(self, pi, values, tau):
+    def choose_action(self, pi, values, tau):
         if tau == 0:
             actions = np.argwhere(pi == max(pi))
             action = random.choice(actions)[0]
@@ -230,13 +231,13 @@ class Agent():
         preds = self.model.predict(inputToModel)
         return preds
 
-    def buildMCTS(self, state):
+    def build_MCTS(self, state):
         lg.logger_mcts.info(
             '****** BUILDING NEW MCTS TREE FOR AGENT %s ******', self.name)
         self.root = mc.Node(state)
         self.mcts = mc.MCTS(self.root, self.cpuct)
 
-    def changeRootMCTS(self, state):
+    def change_root_MCTS(self, state):
         lg.logger_mcts.info(
             '****** CHANGING ROOT OF MCTS TREE TO %s FOR AGENT %s ******',
             state.id, self.name)

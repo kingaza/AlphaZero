@@ -101,6 +101,7 @@
  -.mypy_cache/
 
 
+.ipynb_checkpoints
 analysis/
 archive/
 ipynb/

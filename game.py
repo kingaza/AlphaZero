@@ -38,7 +38,7 @@ class Game:
         return self.gameState
 
     def step(self, action):
-        next_state, value, done = self.gameState.takeAction(action)
+        next_state, value, done = self.gameState.take_action(action)
         self.gameState = next_state
         self.currentPlayer = -self.currentPlayer
         info = None
@@ -230,7 +230,7 @@ class GameState():
         tmp = self.value
         return (tmp[1], tmp[2])
 
-    def takeAction(self, action):
+    def take_action(self, action):
         newBoard = np.array(self.board)
         newBoard[action] = self.playerTurn
 

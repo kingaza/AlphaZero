@@ -6,9 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from keras.models import load_model, Model
-from keras.layers import Input, Dense, Conv2D, Flatten, BatchNormalization, LeakyReLU, add
+from keras.layers import Input, Dense, Conv2D, Flatten
+from keras.layers import BatchNormalization, LeakyReLU, add
 from keras.optimizers import SGD
 from keras import regularizers
+from keras.utils import plot_model
 
 from loss import softmax_cross_entropy_with_logits
 
@@ -17,7 +19,7 @@ import loggers as lg
 from settings import run_folder, run_archive_folder
 
 
-class Gen_Model():
+class BaseModel():
     def __init__(self, reg_const, learning_rate, input_dim, output_dim):
         self.reg_const = reg_const
         self.learning_rate = learning_rate
@@ -37,11 +39,11 @@ class Gen_Model():
             validation_split=validation_split,
             batch_size=batch_size)
 
-    def write(self, game, version):
+    def save(self, game, version):
         self.model.save(run_folder + 'models/version' +
                         "{0:0>4}".format(version) + '.h5')
 
-    def read(self, game, run_number, version):
+    def _get_model(self, game, run_number, version):
         return load_model(
             run_archive_folder + game + '/run' + str(run_number).zfill(4) +
             "/models/version" + "{0:0>4}".format(version) + '.h5',
@@ -49,6 +51,18 @@ class Gen_Model():
                 'softmax_cross_entropy_with_logits':
                 softmax_cross_entropy_with_logits
             })
+
+    def load(self, game, run_number, version):
+        self.model = self._get_model(game, run_number, version)
+
+    def show_summary(self):
+        self.model.summary()
+
+    def plot_model(self, to_file):
+        plot_model(
+            self.model,
+            to_file=to_file,
+            show_shapes=True)        
 
     def printWeightAverages(self):
         layers = self.model.layers
@@ -134,10 +148,10 @@ class Gen_Model():
         lg.logger_model.info('------------------')
 
 
-class Residual_CNN(Gen_Model):
+class ResCNN(BaseModel):
     def __init__(self, reg_const, learning_rate, input_dim, output_dim,
                  hidden_layers):
-        Gen_Model.__init__(self, reg_const, learning_rate, input_dim,
+        BaseModel.__init__(self, reg_const, learning_rate, input_dim,
                            output_dim)
         self.hidden_layers = hidden_layers
         self.num_layers = len(hidden_layers)
@@ -265,7 +279,6 @@ class Residual_CNN(Gen_Model):
         return model
 
     def convertToModelInput(self, state):
-        # np.append(state.binary, [(state.playerTurn + 1)/2] * self.input_dim[1] * self.input_dim[2])
         inputToModel = state.binary
         inputToModel = np.reshape(inputToModel, self.input_dim)
         return (inputToModel)
